@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hermetime</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --cream: #F3EBE1;
+    --milk: #FBF7F1;
+    --coffee: #6F4E37;
+    --coffee-dark: #3E2B21;
+    --coffee-soft: rgba(62,43,33,0.65);
+    --line: #DFCFBB;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    background: var(--cream);
+    color: var(--coffee-dark);
+    font-family: 'Inter', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+  }
+  .wrap {
+    max-width: 460px;
+    text-align: center;
+  }
+  .logo {
+    font-size: 1.1rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    color: var(--coffee);
+    margin-bottom: 2.2rem;
+  }
+  h1 {
+    font-size: clamp(1.7rem, 5vw, 2.3rem);
+    font-weight: 700;
+    line-height: 1.25;
+    margin-bottom: 0.9rem;
+  }
+  p.lede {
+    color: var(--coffee-soft);
+    font-size: 1rem;
+    margin-bottom: 2.6rem;
+  }
+  .buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 0.9rem;
+  }
+  .role-btn {
+    display: block;
+    width: 100%;
+    padding: 1.05rem 1.5rem;
+    border-radius: 12px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+    transition: transform 0.15s ease, opacity 0.2s ease;
+  }
+  .role-btn:active { transform: scale(0.98); }
+  .role-btn.primary {
+    background: var(--coffee);
+    color: var(--milk);
+    border: none;
+  }
+  .role-btn.primary:hover { opacity: 0.92; }
+  .role-btn.secondary {
+    background: transparent;
+    color: var(--coffee-dark);
+    border: 1.5px solid var(--line);
+  }
+  .role-btn.secondary:hover { border-color: var(--coffee); }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="logo">HERMETIME</div>
+    <h1>Book a salon appointment in seconds</h1>
+    <p class="lede">Register your salon or sign in to your dashboard if you already have one.</p>
+    <div class="buttons">
+      <a href="business.html" class="role-btn primary">Continue</a>
+    </div>
+  </div>
+</body>
+</html>

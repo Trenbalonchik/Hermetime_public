@@ -1,0 +1,15 @@
+# JetBrains IDEs (PyCharm, WebStorm, IDEA)
+.idea/
+*.iws
+*.iml
+*.ipr
+
+# System files
+.DS_Store
+Thumbs.db
+
+# Dependencies & Build (if they appear later)
+node_modules/
+dist/
+build/
+*.log

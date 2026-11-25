@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hermetime — Business registration</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --cream: #F3EBE1; --milk: #FBF7F1; --coffee: #6F4E37;
+    --coffee-dark: #3E2B21; --coffee-soft: rgba(62,43,33,0.65);
+    --line: #DFCFBB; --error: #B3483F;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    background: var(--cream); color: var(--coffee-dark); font-family: 'Inter', sans-serif;
+    min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 1.5rem;
+  }
+  .card {
+    background: var(--milk); border: 1px solid var(--line); border-radius: 16px;
+    padding: 2.2rem clamp(1.5rem, 5vw, 2.6rem); max-width: 460px; width: 100%;
+  }
+  a.back { color: var(--coffee-soft); font-size: 0.85rem; text-decoration: none; display: inline-block; margin-bottom: 1.4rem; }
+  h1 { font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem; }
+  p.lede { color: var(--coffee-soft); font-size: 0.92rem; margin-bottom: 1.8rem; }
+
+  .field { margin-bottom: 1.1rem; }
+  .field label { display:block; font-size: 0.8rem; color: var(--coffee-soft); margin-bottom: 0.4rem; }
+  .field input, .field textarea {
+    width: 100%; padding: 0.75rem 0.9rem;
+    border: 1.5px solid var(--line); border-radius: 10px;
+    font-family: 'Inter', sans-serif; font-size: 0.95rem;
+    background: var(--cream); outline: none; resize: vertical;
+    transition: border-color 0.2s;
+  }
+  .field input:focus, .field textarea:focus { border-color: var(--coffee); }
+  .row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  @media (max-width: 420px) { .row { grid-template-columns: 1fr; } }
+
+  .btn {
+    width: 100%; padding: 0.95rem; background: var(--coffee); color: var(--milk);
+    border: none; border-radius: 10px; font-size: 0.95rem; font-weight: 600;
+    cursor: pointer; margin-top: 0.5rem; transition: opacity 0.2s;
+  }
+  .btn:hover { opacity: 0.92; }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .error-msg { color: var(--error); font-size: 0.85rem; margin-top: 0.6rem; display: none; }
+
+  .field small.hint { display:block; font-size: 0.75rem; color: var(--coffee-soft); margin-top: 0.35rem; }
+  .recognized-hint {
+    display: none; align-items: center; gap: 0.5rem;
+    background: rgba(111,78,55,0.08); border: 1px solid var(--line);
+    border-radius: 10px; padding: 0.7rem 0.85rem; margin-bottom: 1.1rem;
+    font-size: 0.85rem; color: var(--coffee-dark);
+  }
+  .recognized-hint .dot { width: 8px; height: 8px; border-radius: 50%; background: #3E8E5A; flex-shrink: 0; }
+  .recognized-hint a { color: var(--coffee); font-weight: 600; text-decoration: none; margin-left: auto; white-space: nowrap; }
+  .recognized-hint a:hover { text-decoration: underline; }
+</style>
+</head>
+<body>
+  <div class="card">
+    <a href="index.html" class="back">← Back</a>
+    <h1>Salon registration</h1>
+    <p class="lede">Create a profile — then manage your schedule, services and bookings from your dashboard.</p>
+
+    <div class="row">
+      <div class="field"><label>Your name</label><input type="text" id="ownerName" placeholder="Owner's name"></div>
+      <div class="field">
+        <label>Your phone</label>
+        <input type="tel" id="ownerPhone" placeholder="+380...">
+        <small class="hint">Already have an account? Enter your number and we'll recognize you!</small>
+      </div>
+    </div>
+    <div class="recognized-hint" id="recognizedHint">
+      <span class="dot"></span>
+      <span id="recognizedText"></span>
+      <a href="#" id="recognizedLink">Go to dashboard →</a>
+    </div>
+    <div class="field"><label>Salon name</label><input type="text" id="bizName" placeholder="For example, Kinma Beauty"></div>
+    <div class="field"><label>Salon phone</label><input type="tel" id="bizPhone" placeholder="+380..."></div>
+    <div class="field"><label>Salon description</label><textarea id="bizDescription" rows="3" placeholder="Briefly describe your services and address — the AI assistant will see this"></textarea></div>
+
+    <button class="btn" id="registerBtn">Create salon</button>
+    <div class="error-msg" id="errorMsg"></div>
+  </div>
+
+<script>
+  const API_BASE = "http://localhost:8000";
+
+  // ---------- Recognize returning owner by their PERSONAL phone (not salon phone) ----------
+  let ownerLookupTimer = null;
+
+  function normalizePhone(v) { return v.replace(/[^\d+]/g, ''); }
+
+  async function lookupOwnerByPhone(phone) {
+    const hint = document.getElementById('recognizedHint');
+    const hintText = document.getElementById('recognizedText');
+    const link = document.getElementById('recognizedLink');
+
+    if (normalizePhone(phone).replace('+', '').length < 9) {
+      hint.style.display = 'none';
+      return;
+    }
+
+    try {
+      const res = await fetch(`${API_BASE}/businesses/by-owner-phone/${encodeURIComponent(phone)}`, {
+        headers: { 'bypass-tunnel-reminder': 'true' }
+      });
+      if (res.status === 404) {
+        hint.style.display = 'none';
+        return;
+      }
+      if (!res.ok) throw new Error('lookup failed');
+      const data = await res.json();
+      hintText.textContent = `We found your salon “${data.name}”.`;
+      link.href = `dashboard.html?business=${data.business_id}`;
+      hint.style.display = 'flex';
+    } catch (err) {
+      hint.style.display = 'none';
+    }
+  }
+
+  document.getElementById('ownerPhone').addEventListener('input', (e) => {
+    clearTimeout(ownerLookupTimer);
+    const phone = e.target.value.trim();
+    ownerLookupTimer = setTimeout(() => lookupOwnerByPhone(phone), 500);
+  });
+
+  document.getElementById('registerBtn').addEventListener('click', async () => {
+    const payload = {
+      owner_name: document.getElementById('ownerName').value.trim(),
+      phone: document.getElementById('ownerPhone').value.trim(),
+      business_name: document.getElementById('bizName').value.trim(),
+      business_phone: document.getElementById('bizPhone').value.trim(),
+      description: document.getElementById('bizDescription').value.trim(),
+    };
+    const errorEl = document.getElementById('errorMsg');
+    const btn = document.getElementById('registerBtn');
+    errorEl.style.display = 'none';
+
+    if (!payload.owner_name || !payload.phone || !payload.business_name) {
+      errorEl.textContent = "Please fill in your name, phone and salon name.";
+      errorEl.style.display = 'block';
+      return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = "Creating…";
+
+    try {
+      const res = await fetch(`${API_BASE}/businesses`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'bypass-tunnel-reminder': 'true' },
+        body: JSON.stringify(payload)
+      });
+      if (!res.ok) throw new Error("bad response");
+      const data = await res.json();
+
+      window.location.href = `dashboard.html?business=${data.business_id}`;
+    } catch (err) {
+      errorEl.textContent = "Could not connect to the server. Check that the API is running.";
+      errorEl.style.display = 'block';
+      btn.disabled = false;
+      btn.textContent = "Create salon";
+    }
+  });
+</script>
+</body>
+</html>

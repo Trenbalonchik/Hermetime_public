@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hermetime — Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --cream: #F3EBE1; --milk: #FBF7F1; --coffee: #6F4E37;
+    --coffee-dark: #3E2B21; --coffee-soft: rgba(62,43,33,0.65);
+    --line: #DFCFBB; --error: #B3483F;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background: var(--cream); color: var(--coffee-dark); font-family: 'Inter', sans-serif; min-height: 100vh; }
+
+  nav {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 1.2rem clamp(1.2rem, 5vw, 3rem);
+    border-bottom: 1px solid var(--line); background: var(--milk);
+  }
+  .logo { font-weight: 700; color: var(--coffee); font-size: 1rem; }
+  #bizNameTag { font-size: 0.85rem; color: var(--coffee-soft); }
+
+  .tabs {
+    display: flex; gap: 0.4rem; padding: 1rem clamp(1.2rem, 5vw, 3rem) 0;
+    max-width: 760px; margin: 0 auto; overflow-x: auto;
+  }
+  .tab-btn {
+    padding: 0.65rem 1.1rem; border-radius: 10px 10px 0 0;
+    font-size: 0.9rem; font-weight: 600; cursor: pointer;
+    background: transparent; border: none; color: var(--coffee-soft);
+    white-space: nowrap;
+  }
+  .tab-btn.active { background: var(--milk); color: var(--coffee); }
+
+  main {
+    max-width: 760px; margin: 0 auto; padding: 1.5rem clamp(1.2rem, 5vw, 3rem) 4rem;
+  }
+  .panel {
+    background: var(--milk); border: 1px solid var(--line); border-radius: 0 12px 12px 12px;
+    padding: clamp(1.4rem, 4vw, 2rem);
+    display: none;
+  }
+  .panel.active { display: block; }
+
+  h2 { font-size: 1.2rem; font-weight: 700; margin-bottom: 1.4rem; }
+
+  .field { margin-bottom: 1.1rem; }
+  .field label { display:block; font-size: 0.8rem; color: var(--coffee-soft); margin-bottom: 0.4rem; }
+  .field input, .field textarea {
+    width: 100%; padding: 0.7rem 0.85rem; border: 1.5px solid var(--line); border-radius: 10px;
+    font-family: 'Inter', sans-serif; font-size: 0.92rem; background: var(--cream); outline: none;
+    transition: border-color 0.2s; resize: vertical;
+  }
+  .field input:focus, .field textarea:focus { border-color: var(--coffee); }
+
+  .btn {
+    padding: 0.8rem 1.4rem; background: var(--coffee); color: var(--milk);
+    border: none; border-radius: 10px; font-size: 0.9rem; font-weight: 600;
+    cursor: pointer; transition: opacity 0.2s;
+  }
+  .btn:hover { opacity: 0.92; }
+  .btn.small { padding: 0.5rem 0.9rem; font-size: 0.8rem; }
+  .btn.outline { background: transparent; color: var(--coffee); border: 1.5px solid var(--coffee); }
+
+  .msg { font-size: 0.85rem; margin-top: 0.7rem; }
+  .msg.ok { color: var(--coffee); }
+  .msg.err { color: var(--error); }
+
+  /* Days/times (Working hours) */
+  .chip-row { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1.4rem; }
+  .chip {
+    padding: 0.55rem 0.95rem; border-radius: 20px; border: 1.5px solid var(--line);
+    font-size: 0.85rem; cursor: pointer; transition: all 0.15s ease;
+  }
+  .chip.selected { background: var(--coffee); color: var(--milk); border-color: var(--coffee); }
+  .chip.remove-mode { display: flex; align-items: center; gap: 0.4rem; cursor: default; }
+  .chip.remove-mode button { background:none; border:none; cursor:pointer; color: inherit; font-size: 0.9rem; }
+
+  .add-row { display: flex; gap: 0.6rem; margin-bottom: 1.6rem; }
+  .add-row input { flex: 1; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+  table th, table td { text-align: left; padding: 0.6rem 0.4rem; border-bottom: 1px solid var(--line); }
+  table th { color: var(--coffee-soft); font-weight: 600; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.03em; }
+  .empty-note { color: var(--coffee-soft); font-size: 0.88rem; padding: 1rem 0; }
+
+  .link-box {
+    display: flex; gap: 0.5rem; margin-top: 1.6rem; padding-top: 1.4rem; border-top: 1px solid var(--line);
+  }
+  .link-box input {
+    flex: 1; padding: 0.6rem 0.8rem; border: 1.5px solid var(--line); border-radius: 8px;
+    font-size: 0.82rem; background: var(--cream); color: var(--coffee-soft);
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="logo">HERMETIME</div>
+  <span id="bizNameTag"></span>
+</nav>
+
+<div class="tabs">
+  <button class="tab-btn active" data-tab="bookings">Bookings</button>
+  <button class="tab-btn" data-tab="hours">Working hours</button>
+  <button class="tab-btn" data-tab="services">Services</button>
+  <button class="tab-btn" data-tab="info">Information</button>
+</div>
+
+<main>
+
+  <!-- BOOKINGS -->
+  <section class="panel active" id="panel-bookings">
+    <h2>Upcoming bookings</h2>
+    <div id="bookingsList"><div class="empty-note">Loading…</div></div>
+  </section>
+
+  <!-- WORKING HOURS -->
+  <section class="panel" id="panel-hours">
+    <h2>Schedule template</h2>
+    <p style="color:var(--coffee-soft); font-size:0.88rem; margin-bottom:1.2rem;">The calendar of available dates is built automatically from this template.</p>
+
+    <label style="font-size:0.8rem; color:var(--coffee-soft); display:block; margin-bottom:0.5rem;">Working days</label>
+    <div class="chip-row" id="dayChips"></div>
+
+    <label style="font-size:0.8rem; color:var(--coffee-soft); display:block; margin-bottom:0.5rem;">Appointment times</label>
+    <div class="chip-row" id="timeChips"></div>
+    <div class="add-row">
+      <input type="text" id="timeInput" placeholder="e.g. 11:00" maxlength="5">
+      <button class="btn small outline" id="addTimeBtn">+ Add</button>
+    </div>
+
+    <div class="field" style="max-width:200px;">
+      <label>Duration, min</label>
+      <input type="number" id="durationInput" value="60" min="5" step="5">
+    </div>
+
+    <button class="btn" id="saveScheduleBtn">Save and generate slots</button>
+    <div class="msg" id="scheduleMsg"></div>
+
+    <div class="link-box">
+      <input type="text" id="clientLinkInput" readonly>
+      <button class="btn small" id="copyLinkBtn">Copy</button>
+    </div>
+  </section>
+
+  <!-- SERVICES -->
+  <section class="panel" id="panel-services">
+    <h2>Services</h2>
+
+    <div id="servicesList"><div class="empty-note">Loading…</div></div>
+
+    <div class="row" style="display:grid; grid-template-columns: 2fr 1fr 1fr; gap:0.8rem; margin-top:1.4rem;">
+      <div class="field"><label>Name</label><input type="text" id="svcName" placeholder="Haircut"></div>
+      <div class="field"><label>Minutes</label><input type="number" id="svcDuration" value="60" min="5" step="5"></div>
+      <div class="field"><label>Price ₴</label><input type="number" id="svcPrice" placeholder="800"></div>
+    </div>
+    <button class="btn" id="addServiceBtn">Add service</button>
+    <div class="msg" id="serviceMsg"></div>
+  </section>
+
+  <!-- INFORMATION -->
+  <section class="panel" id="panel-info">
+    <h2>Salon information</h2>
+
+    <div class="field"><label>Name</label><input type="text" id="infoName"></div>
+    <div class="field"><label>Phone</label><input type="tel" id="infoPhone"></div>
+    <div class="field"><label>Description</label><textarea id="infoDescription" rows="4"></textarea></div>
+
+    <button class="btn" id="saveInfoBtn">Save changes</button>
+    <div class="msg" id="infoMsg"></div>
+  </section>
+
+</main>
+
+<script>
+  const API_BASE = "http://localhost:8000";
+  const WEEKDAY_LABELS = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
+  const params = new URLSearchParams(window.location.search);
+  const BUSINESS_ID = parseInt(params.get('business'));
+
+  if (!BUSINESS_ID) {
+    document.body.innerHTML = '<div style="padding:3rem; text-align:center; font-family:Inter,sans-serif;">No salon ID provided. <a href="business.html">Register a salon</a></div>';
+    throw new Error("no business id");
+  }
+
+  // ---------- Tabs ----------
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('panel-' + btn.dataset.tab).classList.add('active');
+    });
+  });
+
+  // ---------- Info / nav badge ----------
+  async function loadInfo() {
+    try {
+      const res = await fetch(`${API_BASE}/businesses/${BUSINESS_ID}`, { headers: { 'bypass-tunnel-reminder': 'true' } });
+      const data = await res.json();
+      document.getElementById('bizNameTag').textContent = data.name;
+      document.getElementById('infoName').value = data.name;
+      document.getElementById('infoPhone').value = data.phone || '';
+      document.getElementById('infoDescription').value = data.description || '';
+    } catch (err) {
+      document.getElementById('bizNameTag').textContent = 'Salon';
+    }
+  }
+
+  document.getElementById('saveInfoBtn').addEventListener('click', async () => {
+    const msg = document.getElementById('infoMsg');
+    try {
+      const res = await fetch(`${API_BASE}/businesses/${BUSINESS_ID}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'bypass-tunnel-reminder': 'true' },
+        body: JSON.stringify({
+          name: document.getElementById('infoName').value.trim(),
+          phone: document.getElementById('infoPhone').value.trim(),
+          description: document.getElementById('infoDescription').value.trim(),
+        })
+      });
+      if (!res.ok) throw new Error();
+      msg.textContent = "Saved ✓";
+      msg.className = "msg ok";
+      document.getElementById('bizNameTag').textContent = document.getElementById('infoName').value.trim();
+    } catch (err) {
+      msg.textContent = "Could not save.";
+      msg.className = "msg err";
+    }
+  });
+
+  // ---------- Bookings ----------
+  async function loadBookings() {
+    const list = document.getElementById('bookingsList');
+    try {
+      const res = await fetch(`${API_BASE}/businesses/${BUSINESS_ID}/bookings`, { headers: { 'bypass-tunnel-reminder': 'true' } });
+      const data = await res.json();
+      if (!data.bookings || data.bookings.length === 0) {
+        list.innerHTML = '<div class="empty-note">No bookings yet.</div>';
+        return;
+      }
+      let html = '<table><tr><th>Time</th><th>Client</th><th>Phone</th><th>Service</th></tr>';
+      data.bookings.forEach(b => {
+        html += `<tr><td>${b.time}</td><td>${b.name || '—'}</td><td>${b.phone || '—'}</td><td>${b.service || '—'}</td></tr>`;
+      });
+      html += '</table>';
+      list.innerHTML = html;
+    } catch (err) {
+      list.innerHTML = '<div class="empty-note">Could not load bookings.</div>';
+    }
+  }
+
+  // ---------- Schedule template ----------
+  let selectedDays = [];
+  let times = [];
+
+  const dayChipsEl = document.getElementById('dayChips');
+  WEEKDAY_LABELS.forEach((label, i) => {
+    const chip = document.createElement('div');
+    chip.className = 'chip';
+    chip.textContent = label;
+    chip.addEventListener('click', () => {
+      if (selectedDays.includes(i)) {
+        selectedDays = selectedDays.filter(d => d !== i);
+        chip.classList.remove('selected');
+      } else {
+        selectedDays.push(i);
+        chip.classList.add('selected');
+      }
+    });
+    dayChipsEl.appendChild(chip);
+  });
+
+  function renderTimes() {
+    const wrap = document.getElementById('timeChips');
+    wrap.innerHTML = '';
+    times.forEach((t, idx) => {
+      const chip = document.createElement('div');
+      chip.className = 'chip remove-mode';
+      chip.innerHTML = `<span>${t}</span>`;
+      const btn = document.createElement('button');
+      btn.textContent = '×';
+      btn.addEventListener('click', () => { times.splice(idx, 1); renderTimes(); });
+      chip.appendChild(btn);
+      wrap.appendChild(chip);
+    });
+  }
+
+  document.getElementById('addTimeBtn').addEventListener('click', () => {
+    const input = document.getElementById('timeInput');
+    const val = input.value.trim();
+    if (/^([01]\d|2[0-3]):[0-5]\d$/.test(val) && !times.includes(val)) {
+      times.push(val); times.sort(); renderTimes(); input.value = '';
+    } else {
+      input.style.borderColor = 'var(--error)';
+      setTimeout(() => { input.style.borderColor = ''; }, 700);
+    }
+  });
+
+  document.getElementById('saveScheduleBtn').addEventListener('click', async () => {
+    const msg = document.getElementById('scheduleMsg');
+    if (selectedDays.length === 0 || times.length === 0) {
+      msg.textContent = "Select at least one day and one time.";
+      msg.className = "msg err";
+      return;
+    }
+    const duration = parseInt(document.getElementById('durationInput').value) || 60;
+
+    try {
+      const res = await fetch(`${API_BASE}/businesses/${BUSINESS_ID}/schedule-template`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'bypass-tunnel-reminder': 'true' },
+        body: JSON.stringify({ days: selectedDays, times, duration_minutes: duration })
+      });
+      const data = await res.json();
+      msg.textContent = `Done. Created ${data.created_slots} free slots for the next 14 days.`;
+      msg.className = "msg ok";
+    } catch (err) {
+      msg.textContent = "Could not save. Check your connection to the server.";
+      msg.className = "msg err";
+    }
+  });
+
+  // ---------- Services ----------
+  async function loadServices() {
+    const list = document.getElementById('servicesList');
+    try {
+      const res = await fetch(`${API_BASE}/businesses/${BUSINESS_ID}/services`, { headers: { 'bypass-tunnel-reminder': 'true' } });
+      const data = await res.json();
+      if (!data.services || data.services.length === 0) {
+        list.innerHTML = '<div class="empty-note">No services yet.</div>';
+        return;
+      }
+      let html = '<table><tr><th>Name</th><th>Duration</th><th>Price</th><th></th></tr>';
+      data.services.forEach(s => {
+        html += `<tr><td>${s.name}</td><td>${s.duration} min</td><td>${s.price ? s.price + ' ₴' : '—'}</td>
+          <td><button class="btn small outline" onclick="deleteService(${s.id})">Delete</button></td></tr>`;
+      });
+      html += '</table>';
+      list.innerHTML = html;
+    } catch (err) {
+      list.innerHTML = '<div class="empty-note">Could not load services.</div>';
+    }
+  }
+
+  async function deleteService(id) {
+    await fetch(`${API_BASE}/services/${id}`, { method: 'DELETE', headers: { 'bypass-tunnel-reminder': 'true' } });
+    loadServices();
+  }
+
+  document.getElementById('addServiceBtn').addEventListener('click', async () => {
+    const msg = document.getElementById('serviceMsg');
+    const name = document.getElementById('svcName').value.trim();
+    const duration = parseInt(document.getElementById('svcDuration').value) || 60;
+    const priceVal = document.getElementById('svcPrice').value;
+    const price = priceVal ? parseFloat(priceVal) : null;
+
+    if (!name) {
+      msg.textContent = "Enter a service name.";
+      msg.className = "msg err";
+      return;
+    }
+
+    try {
+      await fetch(`${API_BASE}/businesses/${BUSINESS_ID}/services`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'bypass-tunnel-reminder': 'true' },
+        body: JSON.stringify({ name, duration_minutes: duration, price })
+      });
+      document.getElementById('svcName').value = '';
+      document.getElementById('svcPrice').value = '';
+      msg.textContent = "Added ✓";
+      msg.className = "msg ok";
+      loadServices();
+    } catch (err) {
+      msg.textContent = "Could not add the service.";
+      msg.className = "msg err";
+    }
+  });
+
+  // ---------- Client link ----------
+  const clientLink = `${window.location.href.split('dashboard.html')[0]}salon.html?business=${BUSINESS_ID}`;
+  document.getElementById('clientLinkInput').value = clientLink;
+  document.getElementById('copyLinkBtn').addEventListener('click', () => {
+    navigator.clipboard.writeText(clientLink);
+    const btn = document.getElementById('copyLinkBtn');
+    btn.textContent = 'Copied ✓';
+    setTimeout(() => { btn.textContent = 'Copy'; }, 1500);
+  });
+
+  // ---------- Init ----------
+  loadInfo();
+  loadBookings();
+  loadServices();
+</script>
+</body>
+</html>

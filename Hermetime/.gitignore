@@ -1,0 +1,28 @@
+# Секрети
+.env
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+*.egg
+build/
+dist/
+
+# Віртуальне середовище
+.venv/
+venv/
+env/
+
+# IDE
+.idea/
+.vscode/
+
+# ОС
+.DS_Store
+Thumbs.db
+
+# Логи
+*.log

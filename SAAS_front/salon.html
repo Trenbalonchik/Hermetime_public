@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Book an appointment</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --cream: #F3EBE1; --milk: #FBF7F1; --coffee: #6F4E37;
+    --coffee-dark: #3E2B21; --coffee-soft: rgba(62,43,33,0.65);
+    --line: #DFCFBB; --error: #B3483F;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background: var(--cream); color: var(--coffee-dark); font-family: 'Inter', sans-serif; min-height: 100vh; }
+
+  header { text-align: center; padding: 2rem 1.5rem 1rem; }
+  header .logo { font-weight: 700; color: var(--coffee); font-size: 0.85rem; letter-spacing: 0.04em; margin-bottom: 0.6rem; }
+  header h1 { font-size: 1.6rem; font-weight: 700; }
+  header p { color: var(--coffee-soft); font-size: 0.9rem; margin-top: 0.4rem; }
+
+  main { max-width: 480px; margin: 0 auto; padding: 1rem 1.2rem 4rem; }
+
+  .card {
+    background: var(--milk); border: 1px solid var(--line); border-radius: 16px;
+    padding: 1.6rem; margin-bottom: 1.2rem;
+  }
+  .card h2 { font-size: 1rem; font-weight: 700; margin-bottom: 1rem; }
+
+  .svc-list { display: flex; flex-direction: column; gap: 0.6rem; }
+  .svc-item {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 0.85rem 1rem; border: 1.5px solid var(--line); border-radius: 10px; cursor: pointer;
+    transition: all 0.15s ease;
+  }
+  .svc-item:hover { border-color: var(--coffee); }
+  .svc-item.selected { background: var(--coffee); color: var(--milk); border-color: var(--coffee); }
+  .svc-item .svc-meta { font-size: 0.78rem; opacity: 0.75; }
+
+  .cal-nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
+  .cal-nav button { background: none; border: 1.5px solid var(--line); border-radius: 50%; width: 30px; height: 30px; cursor: pointer; }
+  .cal-month { font-weight: 700; font-size: 0.95rem; }
+
+  .cal-grid { display: grid; grid-template-columns: repeat(7,1fr); gap: 4px; margin-bottom: 0.6rem; }
+  .cal-dow { text-align: center; font-size: 0.65rem; color: var(--coffee-soft); padding-bottom: 0.3rem; }
+  .cal-day {
+    aspect-ratio: 1; display: flex; align-items: center; justify-content: center;
+    font-size: 0.85rem; border-radius: 8px; cursor: pointer; color: var(--coffee-dark);
+  }
+  .cal-day.empty { cursor: default; }
+  .cal-day.unavailable { color: var(--line); cursor: default; }
+  .cal-day.available:hover { background: rgba(111,78,55,0.1); }
+  .cal-day.selected { background: var(--coffee); color: var(--milk); font-weight: 700; }
+
+  .slots-row { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 1rem; }
+  .slot-pill {
+    padding: 0.5rem 0.9rem; border: 1.5px solid var(--line); border-radius: 20px;
+    font-size: 0.85rem; cursor: pointer; transition: all 0.15s ease;
+  }
+  .slot-pill:hover { border-color: var(--coffee); }
+  .slot-pill.selected { background: var(--coffee); color: var(--milk); border-color: var(--coffee); }
+
+  .field { margin-bottom: 1rem; }
+  .field label { display:block; font-size: 0.8rem; color: var(--coffee-soft); margin-bottom: 0.4rem; }
+  .field input {
+    width: 100%; padding: 0.7rem 0.85rem; border: 1.5px solid var(--line); border-radius: 10px;
+    font-size: 0.92rem; background: var(--cream); outline: none; transition: border-color 0.2s;
+  }
+  .field input:focus { border-color: var(--coffee); }
+
+  .btn {
+    width: 100%; padding: 0.9rem; background: var(--coffee); color: var(--milk);
+    border: none; border-radius: 10px; font-size: 0.92rem; font-weight: 600; cursor: pointer;
+  }
+  .btn:hover { opacity: 0.92; }
+
+  .muted { color: var(--coffee-soft); font-size: 0.85rem; }
+
+  .success-view { display: none; text-align: center; padding: 1rem 0; }
+  .success-view .check {
+    width: 52px; height: 52px; border-radius: 50%; background: var(--coffee); color: var(--milk);
+    display: flex; align-items: center; justify-content: center; font-size: 1.4rem; margin: 0 auto 1rem;
+  }
+  .success-view h2 { font-size: 1.15rem; font-weight: 700; margin-bottom: 0.4rem; }
+
+  .hidden { display: none !important; }
+
+  /* ---- client recognition hint ---- */
+  .recognized-hint {
+    display: none; align-items: center; gap: 0.5rem;
+    background: rgba(111,78,55,0.08); border: 1px solid var(--line);
+    border-radius: 10px; padding: 0.6rem 0.8rem; margin-top: -0.3rem; margin-bottom: 1rem;
+    font-size: 0.85rem; color: var(--coffee-dark);
+  }
+  .recognized-hint .dot {
+    width: 8px; height: 8px; border-radius: 50%; background: #3E8E5A; flex-shrink: 0;
+  }
+  .field small.hint { display:block; font-size: 0.75rem; color: var(--coffee-soft); margin-top: 0.35rem; }
+
+  /* ---- chat widget ---- */
+  .chat-fab {
+    position: fixed; bottom: 1.4rem; right: 1.4rem; width: 56px; height: 56px;
+    border-radius: 50%; background: var(--coffee); color: var(--milk); border: none;
+    font-size: 1.4rem; cursor: pointer; box-shadow: 0 6px 18px rgba(62,43,33,0.28);
+    display: flex; align-items: center; justify-content: center; z-index: 1000;
+    transition: transform 0.15s ease;
+  }
+  .chat-fab:hover { transform: scale(1.05); }
+
+  .chat-window {
+    position: fixed; bottom: 5.6rem; right: 1.4rem; width: min(360px, calc(100vw - 2.4rem));
+    height: min(500px, calc(100vh - 8rem)); background: var(--milk); border: 1px solid var(--line);
+    border-radius: 16px; box-shadow: 0 12px 32px rgba(62,43,33,0.25);
+    display: none; flex-direction: column; overflow: hidden; z-index: 1000;
+  }
+  .chat-window.open { display: flex; }
+  .chat-header {
+    background: var(--coffee); color: var(--milk); padding: 0.9rem 1rem;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .chat-header .title { font-weight: 700; font-size: 0.92rem; }
+  .chat-header .sub { font-size: 0.72rem; opacity: 0.85; }
+  .chat-header button {
+    background: none; border: none; color: var(--milk); font-size: 1.2rem; cursor: pointer; line-height: 1;
+  }
+  .chat-body { flex: 1; overflow-y: auto; padding: 1rem; display: flex; flex-direction: column; gap: 0.6rem; }
+  .chat-msg { max-width: 82%; padding: 0.55rem 0.8rem; border-radius: 12px; font-size: 0.87rem; line-height: 1.4; }
+  .chat-msg.bot { background: var(--cream); color: var(--coffee-dark); align-self: flex-start; border-bottom-left-radius: 4px; }
+  .chat-msg.user { background: var(--coffee); color: var(--milk); align-self: flex-end; border-bottom-right-radius: 4px; }
+  .chat-msg.typing { background: var(--cream); color: var(--coffee-soft); align-self: flex-start; font-style: italic; }
+  .chat-input-row { display: flex; gap: 0.5rem; padding: 0.7rem; border-top: 1px solid var(--line); }
+  .chat-input-row input {
+    flex: 1; padding: 0.6rem 0.8rem; border: 1.5px solid var(--line); border-radius: 20px;
+    font-family: 'Inter', sans-serif; font-size: 0.87rem; outline: none; background: var(--cream);
+  }
+  .chat-input-row input:focus { border-color: var(--coffee); }
+  .chat-input-row button {
+    width: 38px; height: 38px; border-radius: 50%; background: var(--coffee); color: var(--milk);
+    border: none; cursor: pointer; font-size: 1rem; flex-shrink: 0;
+  }
+  .chat-input-row button:disabled { opacity: 0.5; cursor: not-allowed; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">HERMETIME</div>
+  <h1 id="bizName">Loading…</h1>
+  <p id="bizDescription"></p>
+</header>
+
+<main>
+
+  <section class="card" id="serviceCard">
+    <h2>1. Choose a service</h2>
+    <div class="svc-list" id="svcList"><div class="muted">Loading…</div></div>
+  </section>
+
+  <section class="card hidden" id="calendarCard">
+    <h2>2. Choose a date</h2>
+    <div class="cal-nav">
+      <button id="prevMonth">‹</button>
+      <div class="cal-month" id="calMonthLabel"></div>
+      <button id="nextMonth">›</button>
+    </div>
+    <div class="cal-grid" id="calDow"></div>
+    <div class="cal-grid" id="calGrid"></div>
+
+    <div id="slotsBlock" class="hidden">
+      <div class="muted" style="margin-top:1rem;">Available times</div>
+      <div class="slots-row" id="slotsRow"></div>
+    </div>
+  </section>
+
+  <section class="card hidden" id="formCard">
+    <h2>3. Your contact details</h2>
+    <div class="field">
+      <label>Phone</label>
+      <input type="tel" id="clientPhone" placeholder="+380...">
+      <small class="hint">If you've booked before, we'll recognize you by your number.</small>
+    </div>
+    <div class="recognized-hint" id="recognizedHint">
+      <span class="dot"></span>
+      <span id="recognizedText"></span>
+    </div>
+    <div class="field"><label>Name</label><input type="text" id="clientName"></div>
+    <button class="btn" id="confirmBtn">Confirm booking</button>
+  </section>
+
+  <section class="card hidden" id="successCard">
+    <div class="success-view show">
+      <div class="check">✓</div>
+      <h2>You're booked!</h2>
+      <p class="muted">We look forward to seeing you at the salon.</p>
+    </div>
+  </section>
+
+</main>
+
+<button class="chat-fab" id="chatFab" aria-label="Chat with the assistant">💬</button>
+
+<div class="chat-window" id="chatWindow">
+  <div class="chat-header">
+    <div>
+      <div class="title" id="chatTitle">Salon assistant</div>
+      <div class="sub">Usually replies right away</div>
+    </div>
+    <button id="chatClose">✕</button>
+  </div>
+  <div class="chat-body" id="chatBody"></div>
+  <div class="chat-input-row">
+    <input type="text" id="chatInput" placeholder="Type a message…">
+    <button id="chatSend">➤</button>
+  </div>
+</div>
+
+<script>
+  const API_BASE = "http://localhost:8000";
+  const params = new URLSearchParams(window.location.search);
+  const BUSINESS_ID = parseInt(params.get('business'));
+
+  if (!BUSINESS_ID) {
+    document.querySelector('main').innerHTML = '<p class="muted" style="text-align:center;">Invalid salon link.</p>';
+    throw new Error("no business id");
+  }
+
+  const DOW = ['MON','TUE','WED','THU','FRI','SAT','SUN'];
+  const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+  let viewDate = new Date();
+  let selectedDate = null;
+  let selectedSlotId = null;
+  let selectedServiceId = null;
+  let availableDatesSet = new Set();
+
+  function toISO(d) {
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  }
+
+  // ---------- Header info ----------
+  async function loadBusinessInfo() {
+    try {
+      const res = await fetch(`${API_BASE}/businesses/${BUSINESS_ID}`, { headers: { 'bypass-tunnel-reminder': 'true' } });
+      const data = await res.json();
+      document.getElementById('bizName').textContent = data.name;
+      document.getElementById('bizDescription').textContent = data.description || '';
+      document.getElementById('chatTitle').textContent = `${data.name} assistant`;
+    } catch (err) {
+      document.getElementById('bizName').textContent = 'Salon not found';
+    }
+  }
+
+  // ---------- Services ----------
+  async function loadServices() {
+    const list = document.getElementById('svcList');
+    try {
+      const res = await fetch(`${API_BASE}/businesses/${BUSINESS_ID}/services`, { headers: { 'bypass-tunnel-reminder': 'true' } });
+      const data = await res.json();
+      if (!data.services || data.services.length === 0) {
+        list.innerHTML = '<div class="muted">The salon has not added any services yet — just pick a time.</div>';
+        document.getElementById('calendarCard').classList.remove('hidden');
+        setupCalendarDOW();
+        renderCalendar();
+        return;
+      }
+      list.innerHTML = '';
+      data.services.forEach(s => {
+        const item = document.createElement('div');
+        item.className = 'svc-item';
+        item.innerHTML = `<span>${s.name}</span><span class="svc-meta">${s.duration} min${s.price ? ' · ' + s.price + ' ₴' : ''}</span>`;
+        item.addEventListener('click', () => {
+          document.querySelectorAll('.svc-item').forEach(el => el.classList.remove('selected'));
+          item.classList.add('selected');
+          selectedServiceId = s.id;
+          document.getElementById('calendarCard').classList.remove('hidden');
+          setupCalendarDOW();
+          renderCalendar();
+        });
+        list.appendChild(item);
+      });
+    } catch (err) {
+      list.innerHTML = '<div class="muted">Could not load services.</div>';
+    }
+  }
+
+  // ---------- Calendar ----------
+  let dowRendered = false;
+  function setupCalendarDOW() {
+    if (dowRendered) return;
+    const dowEl = document.getElementById('calDow');
+    DOW.forEach(d => {
+      const el = document.createElement('div');
+      el.className = 'cal-dow';
+      el.textContent = d;
+      dowEl.appendChild(el);
+    });
+    dowRendered = true;
+  }
+
+  async function loadAvailableDates(year, month) {
+    try {
+      const res = await fetch(`${API_BASE}/businesses/${BUSINESS_ID}/available-dates?year=${year}&month=${month+1}`, { headers: { 'bypass-tunnel-reminder': 'true' } });
+      const data = await res.json();
+      availableDatesSet = new Set(data.dates);
+    } catch (err) {
+      availableDatesSet = new Set();
+    }
+  }
+
+  function isAvailable(d) { return availableDatesSet.has(toISO(d)); }
+
+  async function renderCalendar() {
+    const year = viewDate.getFullYear();
+    const month = viewDate.getMonth();
+    document.getElementById('calMonthLabel').textContent = `${MONTHS[month]} ${year}`;
+    await loadAvailableDates(year, month);
+
+    const grid = document.getElementById('calGrid');
+    grid.innerHTML = '';
+
+    const firstDay = new Date(year, month, 1);
+    let offset = firstDay.getDay() - 1;
+    if (offset < 0) offset = 6;
+
+    const daysInMonth = new Date(year, month+1, 0).getDate();
+    const today = new Date(); today.setHours(0,0,0,0);
+
+    for (let i=0; i<offset; i++) {
+      const e = document.createElement('div');
+      e.className = 'cal-day empty';
+      grid.appendChild(e);
+    }
+
+    for (let d=1; d<=daysInMonth; d++) {
+      const date = new Date(year, month, d);
+      const cell = document.createElement('div');
+      const past = date < today;
+      const available = !past && isAvailable(date);
+      cell.className = 'cal-day ' + (available ? 'available' : 'unavailable');
+      cell.textContent = d;
+      if (selectedDate && date.getTime() === selectedDate.getTime()) cell.classList.add('selected');
+      if (available) {
+        cell.addEventListener('click', () => {
+          selectedDate = date; selectedSlotId = null;
+          renderCalendar(); renderSlots();
+        });
+      }
+      grid.appendChild(cell);
+    }
+  }
+
+  async function renderSlots() {
+    const block = document.getElementById('slotsBlock');
+    const row = document.getElementById('slotsRow');
+    document.getElementById('formCard').classList.add('hidden');
+
+    if (!selectedDate) { block.classList.add('hidden'); return; }
+    block.classList.remove('hidden');
+    row.innerHTML = '<span class="muted">Loading…</span>';
+
+    try {
+      const res = await fetch(`${API_BASE}/businesses/${BUSINESS_ID}/slots?day=${toISO(selectedDate)}`, { headers: { 'bypass-tunnel-reminder': 'true' } });
+      const data = await res.json();
+      row.innerHTML = '';
+      if (data.slots.length === 0) {
+        row.innerHTML = '<span class="muted">No available times for this day</span>';
+        return;
+      }
+      data.slots.forEach(slot => {
+        const pill = document.createElement('div');
+        pill.className = 'slot-pill' + (selectedSlotId === slot.id ? ' selected' : '');
+        pill.textContent = slot.time;
+        pill.addEventListener('click', () => {
+          selectedSlotId = slot.id;
+          renderSlots();
+          document.getElementById('formCard').classList.remove('hidden');
+        });
+        row.appendChild(pill);
+      });
+    } catch (err) {
+      row.innerHTML = '<span class="muted">Failed to load</span>';
+    }
+  }
+
+  document.getElementById('prevMonth').addEventListener('click', () => {
+    viewDate = new Date(viewDate.getFullYear(), viewDate.getMonth()-1, 1);
+    renderCalendar();
+  });
+  document.getElementById('nextMonth').addEventListener('click', () => {
+    viewDate = new Date(viewDate.getFullYear(), viewDate.getMonth()+1, 1);
+    renderCalendar();
+  });
+
+  // ---------- Confirm booking ----------
+  document.getElementById('confirmBtn').addEventListener('click', async () => {
+    if (!selectedSlotId) return;
+    const name = document.getElementById('clientName').value.trim();
+    const phone = document.getElementById('clientPhone').value.trim();
+
+    if (!name || !phone) {
+      alert("Please fill in your name and phone.");
+      return;
+    }
+
+    try {
+      const res = await fetch(`${API_BASE}/book`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'bypass-tunnel-reminder': 'true' },
+        body: JSON.stringify({
+          business_id: BUSINESS_ID, slot_id: selectedSlotId,
+          name, phone, service_id: selectedServiceId
+        })
+      });
+
+      if (res.status === 409) {
+        alert("Sorry, this time has just been taken. Please choose another.");
+        selectedSlotId = null;
+        renderSlots();
+        return;
+      }
+      if (!res.ok) { alert("Something went wrong. Please try again."); return; }
+    } catch (err) {
+      alert("Could not connect to the server.");
+      return;
+    }
+
+    document.getElementById('serviceCard').classList.add('hidden');
+    document.getElementById('calendarCard').classList.add('hidden');
+    document.getElementById('formCard').classList.add('hidden');
+    document.getElementById('successCard').classList.remove('hidden');
+  });
+
+  // ---------- Returning-client recognition by phone ----------
+  let recognizedName = null;
+  let phoneLookupTimer = null;
+
+  function normalizePhone(v) { return v.replace(/[^\d+]/g, ''); }
+
+  async function lookupClientByPhone(phone) {
+    const hint = document.getElementById('recognizedHint');
+    const hintText = document.getElementById('recognizedText');
+    const nameInput = document.getElementById('clientName');
+
+    if (normalizePhone(phone).replace('+','').length < 9) {
+      hint.style.display = 'none';
+      return;
+    }
+
+    try {
+      const res = await fetch(`${API_BASE}/clients/by-phone/${encodeURIComponent(phone)}`, {
+        headers: { 'bypass-tunnel-reminder': 'true' }
+      });
+      if (res.status === 404) {
+        recognizedName = null;
+        hint.style.display = 'none';
+        return;
+      }
+      if (!res.ok) throw new Error('lookup failed');
+      const data = await res.json();
+      recognizedName = data.name;
+      nameInput.value = data.name;
+      hintText.textContent = `Welcome back, ${data.name}!`;
+      hint.style.display = 'flex';
+    } catch (err) {
+      hint.style.display = 'none';
+    }
+  }
+
+  document.getElementById('clientPhone').addEventListener('input', (e) => {
+    clearTimeout(phoneLookupTimer);
+    const phone = e.target.value.trim();
+    phoneLookupTimer = setTimeout(() => lookupClientByPhone(phone), 500);
+  });
+
+  // ---------- Chat widget ----------
+  const chatFab = document.getElementById('chatFab');
+  const chatWindow = document.getElementById('chatWindow');
+  const chatBody = document.getElementById('chatBody');
+  const chatInput = document.getElementById('chatInput');
+  const chatSend = document.getElementById('chatSend');
+  let chatOpened = false;
+
+  function addChatMessage(text, role) {
+    const el = document.createElement('div');
+    el.className = `chat-msg ${role}`;
+    el.textContent = text;
+    chatBody.appendChild(el);
+    chatBody.scrollTop = chatBody.scrollHeight;
+    return el;
+  }
+
+  function toggleChat(open) {
+    chatWindow.classList.toggle('open', open);
+    if (open && !chatOpened) {
+      chatOpened = true;
+      addChatMessage('Hello! I am the salon assistant. How can I help — services, prices, schedule?', 'bot');
+    }
+    if (open) chatInput.focus();
+  }
+
+  chatFab.addEventListener('click', () => toggleChat(!chatWindow.classList.contains('open')));
+  document.getElementById('chatClose').addEventListener('click', () => toggleChat(false));
+
+  async function sendChatMessage() {
+    const text = chatInput.value.trim();
+    if (!text) return;
+    addChatMessage(text, 'user');
+    chatInput.value = '';
+    chatInput.disabled = true;
+    chatSend.disabled = true;
+    const typingEl = addChatMessage('Typing…', 'bot typing');
+
+    try {
+      const res = await fetch(`${API_BASE}/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'bypass-tunnel-reminder': 'true' },
+        body: JSON.stringify({ business_id: BUSINESS_ID, message: text })
+      });
+      const data = await res.json();
+      typingEl.remove();
+      addChatMessage(data.reply || 'Sorry, something went wrong.', 'bot');
+    } catch (err) {
+      typingEl.remove();
+      addChatMessage('Could not connect to the server. Please try again later.', 'bot');
+    } finally {
+      chatInput.disabled = false;
+      chatSend.disabled = false;
+      chatInput.focus();
+    }
+  }
+
+  chatSend.addEventListener('click', sendChatMessage);
+  chatInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') sendChatMessage();
+  });
+
+  // ---------- Init ----------
+  loadBusinessInfo();
+  loadServices();
+</script>
+</body>
+</html>
